@@ -27,7 +27,6 @@ class Server:
     SECTION_PREFIX = 'ModbusUDP'
     RECIEVE_HEADER = b'ub2h.v3:'
 
-    
     def __init__(self, if_thermo=False):
         # Конфиг
         self.config = ConfigParser()
