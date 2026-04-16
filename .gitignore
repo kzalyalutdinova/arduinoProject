@@ -15,6 +15,8 @@
 !cpp_files/
 !cpp_files/**
 
+!readme.md
+
 # Всегда разрешаем сам файл gitignore
 !.gitignore
 
@@ -27,11 +29,11 @@ new_version/**/__pycache__/
 new_version/**/*.pyc
 new_version/**/*.pyo
 
-# Игнорируем виртуальное окружение (если вдруг создастся внутри new_version)
+# Игнорируем виртуальное окружение
 new_version/.venv/
 new_version/**/.venv/
 
-# Игнорируем папку logs внутри new_version (она видна на скриншоте)
+# Игнорируем папку logs внутри new_version
 new_version/logs/*
 
 # Создайте пустой файл .gitkeep в папке logs и добавьте его в исключения:
