@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ModbusUDP</title>
+</head>
+<body>
+    
+
+    <div style="display: flex; justify-content: space-around;">
+        <div id='form_container'>
+            <div id="modbus_command_container">
+                <h2>Отправка Modbus-запроса</h2>
+                <form id="request_form">
+                    <div>
+                    <label>Команда:
+                        <select id="function" name="function" required>
+                            <option value="6">Write (0x06)</option>
+                            <option value="3">Read (0x03)</option>
+                        </select>
+                    </label>
+                    <br><br>
+                    </div>
+                    
+                    <label>ID устройства:
+                        <input id="slave_id" type="number" name="slave_id" min="1" max="247" required>
+                    </label>
+                    <br><br>
+
+                    <label id="register_address" style="display: none;">Регистр(ы) устройства:</label>
+                    <br><br>
+
+                    <label id="value_or_quantity">Значение (количество регистров):
+                        <input type="number" name="value" min="0" max="65535" required>
+                    </label>
+                    <br><br>
+
+                    <button type="submit">Отправить запрос</button>
+                    <button type="button" id="init">Инициализировать</button>
+                </form>
+            </div>
+            <div id="set_frequency_container">
+                <h2>Задать частоту</h2>
+                <form id="set_frequency_form">
+                    <label>Частота:
+                        <input id="frequency" type="number" name="value" min="0" max="50" step="0.1" required>
+                    </label>
+                    <button type="submit">Отправить запрос</button>
+                </form>
+            </div>
+            <div id="set_dmrv_container">
+                <h2>Задать желаемое значение расхода воздуха</h2>
+                <form id="set_dmrv_form">
+                    <label> Расход воздуха:
+                        <input id="dmrv" type="number" name="value" min="0" max="1000" step="0.1" required>
+                    </label>
+                    <button type="submit">Отправить запрос</button>
+                </form>
+            </div>
+             <!-- <div id="rele_container" style="display: flex;"> -->
+            <div id="rele_container">
+                <h2>Задать желаемое значение температуры</h2>
+                <div style="display: flex; justify-content: space-between;">
+                    <form id="set_temp_form" >
+                        <label> Температура:
+                            <input id="temperature" type="number" name="value" min="0" max="1000" step="0.1" required>
+                        </label>
+                        <button type="submit">Отправить запрос</button>
+                    </form>
+                    <form id="toggle_rele_form">
+                        <button type="submit">Переключить реле</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+        <div id="logs_container">
+            <h2>Ответ от ARDUINO</h2>
+            <div id="logs" style="overflow-y: scroll; max-height: 1200px; font-size: 24px;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('toggle_rele_form').onsubmit = async (e) => {
+            e.preventDefault();
+            const data = {
+                user_command: "toggle_rele"          
+            };
+            
+            console.log(data);
+
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+    </script>
+
+    <script>
+        document.getElementById('set_temp_form').onsubmit = async (e) => {
+            e.preventDefault();
+            const value = document.getElementById("temperature").value;
+            const data = {
+                user_command: "set_temp",
+                value: parseFloat(value).toFixed(1)            
+            };
+            
+            console.log(data);
+
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        }
+    </script>
+    <script>
+        document.getElementById('set_dmrv_form').onsubmit = async (e) => {
+            e.preventDefault();
+            const value = document.getElementById("dmrv").value;
+            const data = {
+                user_command: "set_dmrv",
+                value: parseFloat(value).toFixed(1)            
+            };
+            
+            console.log(data);
+
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        };
+    </script>
+
+    <script>
+        document.getElementById('set_frequency_form').onsubmit = async (e) => {
+            e.preventDefault();
+            const value = document.getElementById("frequency").value;
+            const data = {
+                user_command: "set_frequency",
+                value: parseFloat(value).toFixed(1)            
+            };
+            
+            console.log(data);
+
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        };
+    </script>
+
+    <script>
+        document.getElementById('init').onclick = async (e) => {
+            e.preventDefault();
+            const data = {
+                user_command: "init"             
+            };
+            console.log(data);
+
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        };
+    </script>
+
+    <script>
+        function niceMessage(data) {
+            var text = ``;
+            if (data.hasOwnProperty("addr")) {
+                text += `Reply from: ${data.addr[0]}:${data.addr[1]}<br>`;
+            };
+
+            if (data.hasOwnProperty("analog")) {
+                text += `Analog Pins: `;
+                Array.from(data.analog.values).forEach(value => {
+                    text += `${parseFloat(value).toFixed(2)}, `;
+                });
+                text = text.slice(0, -2);
+                text += `<br>`;
+            };
+
+            if (data.hasOwnProperty("freqs")) {
+                text += `Frequencies: `;
+                Array.from(data.freqs).forEach(value => {
+                    text += `${parseFloat(value).toFixed(2)}, `;
+                });
+                text = text.slice(0, -2);
+                text += `<br>`;
+            };
+
+            if (data.hasOwnProperty("thermo")) {
+                if (data.thermo[0] != 'No_thermo') {
+                    text += `Thermo Couples: `;
+                    Array.from(data.thermo).forEach(value => {
+                        text += `${parseFloat(value).toFixed(2)}, `;
+                    });
+                    text = text.slice(0, -2);
+                    text += `<br>`;
+                };
+            };
+
+             if (data.hasOwnProperty("thermo_error")) {
+                //if (data.thermo[0] != 'No_thermo') {
+                text += `Thermo Error: `;
+                text += data.thermo_error
+                // Array.from(data.thermo_error).forEach(value => {
+                //     text += `${parseFloat(value).toFixed(2)}, `;
+                // });
+                // text = text.slice(0, -2);
+                text += `<br>`;
+                // };
+            };
+
+            if (data.hasOwnProperty("dmrv_results")) {
+               text += `Values: `;
+               Array.from(data.dmrv_results).forEach(value => {
+                   text += `${parseFloat(value).toFixed(2)}, `;
+               });
+               text = text.slice(0, -2);
+               text += `<br>`;
+            };
+            
+            if (data.hasOwnProperty("rele_on")) {
+                text += `Rele position: ${data.rele_on}<br>`;
+            };
+
+            if (data.hasOwnProperty("errors")) {
+                text += `Errors: `;
+                if (data.errors == null) {
+                    text += `No<br>`;
+                } else {
+                    Array.from(data.errors).forEach(value => {
+                        text += `${value}, `;
+                    });
+                    text = text.slice(0, -2);
+                    text += `<br>`;
+                };
+            };
+
+            if (data.hasOwnProperty("packet_size")) {
+                text += `Packet size: ${data.packet_size}<br>`;
+            };
+
+            // if (data.hasOwnProperty("valid")) {
+            //     text += `Valid: ${data.valid}<br>`;
+            // };
+
+            // if (data.hasOwnProperty("slave_id")) {
+            //     text += `Slave ID: ${data.slave_id}<br>`;
+            // };
+
+            // if (data.hasOwnProperty("func_code")) {
+            //     text += `Command: ${data.func_code}<br>`;
+            // };
+
+            // if (data.hasOwnProperty("reg_adr")) {
+            //     text += `Register Address: ${data.reg_adr.toString(16).padStart(4, '0')}<br>`;
+            // };
+
+            // if (data.hasOwnProperty("value_or_quantity")) {
+            //     text += `Value: ${data.value_or_quantity}<br>`;
+            // };
+
+            return text
+        }
+    </script>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8282/ws');
+
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Отображаем данные от Arduino
+            const logs = document.getElementById('logs');
+            const logs_firstChild = logs.firstChild;
+            const responseItem = document.createElement('div');
+
+            const text = niceMessage(data);
+            const html = `<p> ${text} </p>`;
+           
+            responseItem.className = 'response_item';
+            responseItem.innerHTML = html;
+            
+            logs.insertBefore(responseItem, logs_firstChild);
+            // logs.appendChild(responseItem);
+        };
+    </script>
+    <script>
+        async function getRegisters(slaveId, functionCode) {
+            if (!slaveId) return;
+
+            const response = await fetch(`/get_registers?slave_id=${slaveId}&function=${functionCode}`);
+            const { registers = [] } = await response.json(); 
+
+            const registersCont = document.getElementById('register_address');
+            registersCont.innerHTML = '';
+
+            if (registers.length > 0) {
+                registers.forEach((register, index) => {
+                    const regName = document.createElement('div');
+                    regName.innerHTML = `<label><input type="checkbox" name="registers" value="${register}"> 
+                        Регистр ${index + 1}: ${register.toString(16).padStart(4, '0')}</label>`;
+                    registersCont.appendChild(regName);
+                });
+            } else {
+                registersCont.innerHTML = '<p>Нет доступных регистров для этого устройства</p>';
+            }
+            registersCont.style.display = 'block';
+        }
+
+        document.getElementById('slave_id').addEventListener('change', function() {
+            const slaveId = this.value;
+            const functionCode = document.getElementById('function').value;
+            getRegisters(slaveId, functionCode);
+        });
+        
+        document.getElementById('function').addEventListener('change', function() {
+            const slaveId = document.getElementById('slave_id').value;
+            const functionCode = this.value;
+            getRegisters(slaveId, functionCode);
+
+            const val_quant_label = document.getElementById('value_or_quantity');
+            if (functionCode == 6) {
+                val_quant_label.innerHTML = 'Значение: <input type="number" name="value" min="0" max="65535" required>';
+            } else {
+                val_quant_label.innerHTML = 'Количество регистров: <input type="number" name="value" min="0" max="65535" required>';
+            };
+            
+        });
+    </script>
+
+    <script>
+        document.getElementById('request_form').onsubmit = async (e) => {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            const data = Object.fromEntries(form.entries());
+            data.user_command = 'modbus_request';
+            
+            const regCont = document.getElementById('register_address');
+            var regs = new Array(); 
+            Array.from(regCont.children).forEach(child => {
+                const checkbox = child.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    regs.push(checkbox.value);
+                }
+            });
+
+            data.registers = regs;
+            console.log(data);
+
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+        };
+    </script>
+</body>
+</html>
