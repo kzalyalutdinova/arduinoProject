@@ -184,8 +184,15 @@ class Server:
             
             req = self.arduino.build_rele_toggle_request(if_header=True)
             await self._send_request(req)
-            
         
+        elif user_command == 'drw_pins':
+            logger.info(f"[CMD] Received drw_pins with params: {params}")
+            self.arduino.drw_mask = int(params['value'])
+
+            req = self.arduino.build_drw_request(if_header=True)
+            await self._send_request(req)
+            print(req)
+            
     def update_slaves(self, data: dict):
         # for i in range(len(self.slave_ids)):
         pins = sorted(self.pin_map.keys())
@@ -224,10 +231,12 @@ class Server:
     def parse_arduino_answer(self, recieved_message: bytes, ip_addr=None):
         print(f'Answer: {recieved_message}')
         parsed_answer = answer_parsing(recieved_message, self.arduino)
-        
-        voltages = self._set_analog_values(parsed_answer['a_pins'])
-        self.dmrv.update(voltages)
-        self.arduino.thermo_couples_values = parsed_answer['thermo']
+        try:
+            ans = parsed_answer['drw']
+        except KeyError:
+            voltages = self._set_analog_values(parsed_answer['a_pins'])
+            self.dmrv.update(voltages)
+            self.arduino.thermo_couples_values = parsed_answer['thermo']
 
         print(parsed_answer)
         return parsed_answer

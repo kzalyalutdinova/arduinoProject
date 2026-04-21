@@ -96,6 +96,13 @@ def answer_parsing(message: bytes, arduino: ArduinoBoard, RECIEVE_HEADER=b'ub2h.
                 offset += 1
                 parsed_answer['rele_on'] = 'On' if count == 1 else 'Off'
             
+            elif cmd == arduino.CMD_DRW:
+                if offset + 1 > len(message):
+                    errors.append(f"Truncated count after command {cmd}")
+                    break
+                ans = struct.unpack_from("<B", message, offset)[0]  # <B = unsigned char = 1 байт
+                offset += 1
+                parsed_answer['drw'] = f"{ans:08b}"
             else:
                 errors.append(f"Unknown command {cmd} at offset {offset-4}, stopping parse")
                 break

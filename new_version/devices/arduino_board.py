@@ -22,6 +22,7 @@ class ArduinoBoard:
         self.slaves = slaves
 
         self.mask = self._read_analog_pins()
+        self.drw_mask = 0
 
         self.thermo_couples_values: List[float] = []
         self.rele_position: int = 0         # Состояния реле: 0 - выключено, 1 -включено
@@ -36,6 +37,9 @@ class ArduinoBoard:
 
         # команды для управления реле
         self.CMD_TOGGLE_RELE = int(config.get(self.SECTION_PREFIX, 'cmd_toggle_rele'))
+
+        # команда для управления ДРВ
+        self.CMD_DRW = int(config.get(self.SECTION_PREFIX, 'cmd_drw'))
 
         # дополнительные команды
         self.CMD_READ_ANALOG_PINS = int(config.get(self.SECTION_PREFIX, 'cmd_read_analog_pins'))
@@ -136,6 +140,14 @@ class ArduinoBoard:
 
         payload += struct.pack('<H', self.CMD_READ_ANALOG_PINS)
         payload += struct.pack('<B', self.mask)
+
+        return payload
+    
+    def build_drw_request(self, if_header=False):
+        payload = self.HEADER if if_header else b''
+
+        payload += struct.pack('<H', self.CMD_DRW)
+        payload += struct.pack('<B', self.drw_mask)
 
         return payload
     

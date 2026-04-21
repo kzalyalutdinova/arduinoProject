@@ -71,7 +71,20 @@
                         <button type="submit">Переключить реле</button>
                     </form>
                 </div>
-
+            </div>
+            <div id="drw_container">
+                <form id="drw_form"></form>
+                    <h2>Пины ДРВ</h2>
+                    <input type="checkbox" id="p0" name="0"><label for="p0">Пин 0</label><br>
+                    <input type="checkbox" id="p1" name="1"><label for="p1">Пин 1</label><br>
+                    <input type="checkbox" id="p2" name="2"><label for="p2">Пин 2</label><br>
+                    <input type="checkbox" id="p3" name="3"><label for="p3">Пин 3</label><br>
+                    <input type="checkbox" id="p4" name="4"><label for="p4">Пин 4</label><br>
+                    <input type="checkbox" id="p5" name="5"><label for="p5">Пин 5</label><br>
+                    <input type="checkbox" id="p6" name="6"><label for="p6">Пин 6</label><br>
+                    <input type="checkbox" id="p7" name="7"><label for="p7">Пин 7</label><br>
+                    <button onclick='push_drw()'>Подтвердить</button>
+                </form>
             </div>
         </div>
         <div id="logs_container">
@@ -79,7 +92,32 @@
             <div id="logs" style="overflow-y: scroll; max-height: 1200px; font-size: 24px;"></div>
         </div>
     </div>
-
+    <script>
+        async function push_drw(){
+            const maskArray = Array.from({ length: 8 }, (_, i) => {
+                const checkbox = document.querySelector(`input[name="${i}"]`);
+                return checkbox?.checked ? 1 : 0;
+            });
+            console.log(maskArray)
+            let mask = 0;
+            for (let i = 0; i < maskArray.length; i++) {
+                if (maskArray[i] === 1) {
+                    mask |= (1 << i); 
+                }
+            }
+            console.log(mask)
+            const data = {
+                user_command: "drw_pins",
+                value: mask            
+            };
+                // Отправляем на сервер
+            await fetch('/user_request', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+    </script>
     <script>
         document.getElementById('toggle_rele_form').onsubmit = async (e) => {
             e.preventDefault();
@@ -174,6 +212,11 @@
             var text = ``;
             if (data.hasOwnProperty("addr")) {
                 text += `Reply from: ${data.addr[0]}:${data.addr[1]}<br>`;
+            };
+
+            if (data.hasOwnProperty("analog")) {
+                text += `DRW: ${data.drw}`;
+                text += `<br>`;
             };
 
             if (data.hasOwnProperty("analog")) {
