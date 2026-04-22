@@ -234,9 +234,10 @@ class Server:
         try:
             ans = parsed_answer['drw']
         except KeyError:
-            voltages = self._set_analog_values(parsed_answer['a_pins'])
-            self.dmrv.update(voltages)
-            self.arduino.thermo_couples_values = parsed_answer['thermo']
+            pass
+            # voltages = self._set_analog_values(parsed_answer['a_pins'])
+            # self.dmrv.update(voltages)
+            # self.arduino.thermo_couples_values = parsed_answer['thermo']
 
         print(parsed_answer)
         return parsed_answer

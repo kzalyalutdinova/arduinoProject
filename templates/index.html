@@ -102,7 +102,7 @@
             let mask = 0;
             for (let i = 0; i < maskArray.length; i++) {
                 if (maskArray[i] === 1) {
-                    mask |= (1 << i); 
+                    mask |= (1 << (7 - i)); 
                 }
             }
             console.log(mask)
@@ -214,7 +214,7 @@
                 text += `Reply from: ${data.addr[0]}:${data.addr[1]}<br>`;
             };
 
-            if (data.hasOwnProperty("analog")) {
+            if (data.hasOwnProperty("drw")) {
                 text += `DRW: ${data.drw}`;
                 text += `<br>`;
             };
