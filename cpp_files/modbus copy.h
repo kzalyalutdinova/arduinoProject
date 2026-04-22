@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#define SOFT 1
+#define SOFT 0
 
 // Modbus функции
 constexpr uint8_t CMD_READ_SEV = 0x03;
@@ -16,10 +16,11 @@ constexpr uint8_t CMD_MODBUS = 140;
 constexpr uint8_t CMD_READ_THERMO = 150;
 constexpr uint8_t CMD_TOGGLE_RELE = 160;
 constexpr uint8_t CMD_CHECK_RELE = 161;
+constexpr uint8_t CMD_DRW = 180;
 
 // Пины SoftwareSerial
-constexpr uint8_t MODBUS_RX_PIN = 3; 
-constexpr uint8_t MODBUS_TX_PIN = 2;
+// constexpr uint8_t MODBUS_RX_PIN = 0;
+// constexpr uint8_t MODBUS_TX_PIN = 1;
 
 // Функции
 uint16_t calculateCRC(uint8_t* data, uint8_t len);
@@ -32,5 +33,8 @@ bool readRegisters(uint8_t slaveAddr, uint16_t startAddr, uint16_t quantity);
 float readFrequency(uint8_t slaveAddr, uint16_t startAddr, uint16_t quantity);
 
 void modbus_init();
+
+// Читает ответ от Modbus-устройства, возвращает длину данных или 0 при ошибке
+// int readSlaveReply(uint8_t slaveAddr, uint16_t startAddr, uint16_t quantity, uint8_t* outBuffer);
 
 #endif

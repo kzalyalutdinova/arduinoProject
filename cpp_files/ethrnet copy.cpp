@@ -3,7 +3,8 @@
 #include <Adafruit_MAX31856.h>
 
 #include "modbus.h"
-#include "rele.h"
+// #include "rele.h"
+#include "drw.h"
 #include "ethernet.h"
 
 #define B2HV3_PACKET_MAXSIZE 256
@@ -137,10 +138,10 @@ void process_Ub2hV3Packet(uint8_t* buffer, int len) {
             };
             data.temps_count = 4;
         }
-        else if (cmdCode == CMD_CHECK_RELE) {
-            data.check_rele = true;
-            data.is_rele_on = releOn;
-        }
+        // else if (cmdCode == CMD_CHECK_RELE) {
+        //     data.check_rele = true;
+        //     data.is_rele_on = releOn;
+        // }
     };
 };
 
@@ -175,24 +176,66 @@ void process_ModbusCMD(uint8_t* buffer, int len) {
 };
 
 
-void process_ReleToggleCMD(uint8_t* buffer, int len) {
+// void process_ReleToggleCMD(uint8_t* buffer, int len) {
+//     const int HEADER_LEN = 8;
+//     int offset = HEADER_LEN;
+
+//     while (offset < len) {
+        
+//         uint16_t cmdCode;
+//         memcpy(&cmdCode, &buffer[offset], 2);
+//         offset += 2;
+
+//         if (cmdCode == CMD_TOGGLE_RELE) {
+//             uint8_t rele_position;
+//             memcpy(&rele_position, &buffer[offset], 1);
+//             offset += 1;
+            
+//             rele_toggle(rele_position);
+//         };
+//     };
+// };
+
+unsigned long process_DRW_CMD(uint8_t* buffer, int len) {
     const int HEADER_LEN = 8;
     int offset = HEADER_LEN;
+    unsigned long drw_out = 0;
 
     while (offset < len) {
-        
         uint16_t cmdCode;
         memcpy(&cmdCode, &buffer[offset], 2);
         offset += 2;
-
-        if (cmdCode == CMD_TOGGLE_RELE) {
-            uint8_t rele_position;
-            memcpy(&rele_position, &buffer[offset], 1);
+        if (cmdCode == CMD_DRW) {
+            unsigned long mask;
+            memcpy(&mask, &buffer[offset], 1);
             offset += 1;
-            
-            rele_toggle(rele_position);
-        }
-    }
+
+            unsigned long drw_out = dout_set(mask);
+        };
+    };
+    
+    return drw_out;
+}
+
+uint16_t build_DRWanswer(uint8_t* buffer, size_t buffer_size, unsigned long drw_out) {
+    const uint16_t packet_size = 8 + 2 + 1;
+
+    if (packet_size > buffer_size) return 0;
+    uint16_t offset = 0;
+
+    memcpy(&buffer[offset], "ub2h.v3:", 8);
+    offset += 8;
+
+     // 2. Код команды (2 байта, little-endian)
+    uint16_t cmd = CMD_DRW;  // Убедитесь, что CMD_DRW определён как константа
+    memcpy(&buffer[offset], &cmd, 2);
+    offset += 2;
+
+    // Данные: 1 байт (только младшие 8 бит)
+    buffer[offset] = drw_out & 0xFF;
+    offset += 1;
+
+    return offset;
 }
 
 uint16_t buildUb2hV3Packet(uint8_t* buffer, size_t buffer_size) {
@@ -341,10 +384,19 @@ void pull_loop() {
             Udp.write(response_buffer, response_size);
             Udp.endPacket();
         } 
-        else if (command == CMD_TOGGLE_RELE) {
-            process_ReleToggleCMD(packetBuffer, len);
+        // else if (command == CMD_TOGGLE_RELE) {
+        //     process_ReleToggleCMD(packetBuffer, len);
+        //     Udp.beginPacket(last_remote_ip, sendPort);
+        //     Udp.write(releOn);
+        //     Udp.endPacket();
+        // }
+        else if (command == CMD_DRW) {
+            unsigned long out = process_DRW_CMD(packetBuffer, len);
+            uint8_t response_buffer[11];
+            uint16_t response_size = build_DRWanswer(response_buffer, sizeof(response_buffer), out);
+
             Udp.beginPacket(last_remote_ip, sendPort);
-            Udp.write(releOn);
+            Udp.write(response_buffer, response_size);
             Udp.endPacket();
         }
     } else {

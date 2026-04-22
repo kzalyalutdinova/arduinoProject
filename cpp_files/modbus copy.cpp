@@ -1,7 +1,7 @@
 #include "modbus.h"
 #include <SoftwareSerial.h>
 
-SoftwareSerial modbusSerial(MODBUS_RX_PIN, MODBUS_TX_PIN);
+// SoftwareSerial modbusSerial(MODBUS_RX_PIN, MODBUS_TX_PIN);
 
 // Подсчет контрольной суммы
 uint16_t calculateCRC(uint8_t* data, uint8_t len) {
@@ -26,7 +26,8 @@ bool write(byte *buf, int s) {
 
     if (SOFT) {
         delay(10);
-        wr = modbusSerial.write(buf, s);
+        // wr = modbusSerial.write(buf, s);
+        wr = Serial.write(buf, s);
     } else {
         wr = Serial.write(buf, s);
     };
@@ -83,7 +84,7 @@ bool readRegisters(byte slaveAddr,      // Адрес ведомого устр�
 }
 
 float readFrequency(byte slaveAddr, uint16_t startAddr,  uint16_t quantity) {
-    while (modbusSerial.available()) modbusSerial.read();
+    while (Serial.available()) Serial.read();
     
     readRegisters(slaveAddr, startAddr, quantity);
     
@@ -91,10 +92,10 @@ float readFrequency(byte slaveAddr, uint16_t startAddr,  uint16_t quantity) {
     int i = 0;
     
     unsigned long start = millis();
-    while ((millis() - start) < 100) {
-        if (modbusSerial.available()) {
+    while ((millis() - start) < 200) {
+        if (Serial.available()) {
             if (i < sizeof(response)) {
-                response[i++] = modbusSerial.read();
+                response[i++] = Serial.read();
             }
         }
         delay(1);
@@ -107,12 +108,11 @@ float readFrequency(byte slaveAddr, uint16_t startAddr,  uint16_t quantity) {
         }
     }
     
-    Serial.println("No valid response found");
+    //Serial.println("No valid response found");
     return -1;
 }
 
 
 void modbus_init() {
-    modbusSerial.begin(19200);
-    Serial.println("Modbus initialized");
+   Serial.begin(19200);
 }
